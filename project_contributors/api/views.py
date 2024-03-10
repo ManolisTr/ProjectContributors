@@ -1,5 +1,3 @@
-# api/views.py
-
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from django.contrib.auth.models import User
@@ -13,7 +11,6 @@ from rest_framework.response import Response
 from .models import ProgrammingSkill
 from django.db.models import Count
 from django.db.models import F
-
 from api.models import OpenSourceProject, ExpressionOfInterest
 from api.serializers import OpenSourceProjectSerializer, ExpressionOfInterestSerializer
 
@@ -27,19 +24,26 @@ def create_user(request):
     password = request.data.get('password')
     email = request.data.get('email')
 
+    # Check if all required fields are provided
     if not (username and password and email):
         return Response({'error': 'Please provide username, password, and email'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Check if the username already exists
     if User.objects.filter(username=username).exists():
         return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
+    if User.objects.filter(email=email).exists():
+        return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the user using Django's ORM
     user = User.objects.create_user(
-        username=username, email=email, password=password)
-    # Set additional fields if needed
-    user.age = request.data.get('age')
-    user.country = request.data.get('country')
-    user.residence = request.data.get('residence')
-    user.save()
+        username=username,
+        email=email,
+        password=password,
+        age=request.data.get('age'),
+        country=request.data.get('country'),
+        residence=request.data.get('residence')
+    )
 
     return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
 
@@ -80,15 +84,15 @@ def add_skill(request):
         if request.user.programming_skills.count() >= 3:
             return Response({'message': 'Maximum three skills allowed'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if the skill already exists
-        try:
-            skill = ProgrammingSkill.objects.get(name=skill_name)
-            return Response({'message': f'Skill "{skill_name}" already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        except ProgrammingSkill.DoesNotExist:
-            pass
+        # Check if the skill already exists for the user
+        if request.user.programming_skills.filter(name=skill_name).exists():
+            return Response({'message': f'Skill "{skill_name}" already exists for the user'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create or get the skill
+        skill, created = ProgrammingSkill.objects.get_or_create(
+            name=skill_name)
 
         # Add the skill to the user's programming_skills
-        skill = ProgrammingSkill.objects.create(name=skill_name)
         request.user.programming_skills.add(skill)
 
         return Response({'message': 'Skill added successfully'}, status=status.HTTP_201_CREATED)
@@ -167,6 +171,7 @@ def available_projects(request):
 
     return Response(serialized_projects, status=status.HTTP_200_OK)
 
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -189,6 +194,7 @@ def express_interest(request, project_id):
 
 
 @api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def delete_project(request, pk):
     try:
@@ -209,9 +215,10 @@ def delete_project(request, pk):
 @permission_classes([IsAuthenticated])
 def project_interests(request, project_id):
     try:
-        project = OpenSourceProject.objects.get(id=project_id, creator=request.user)
+        project = OpenSourceProject.objects.get(
+            id=project_id, creator=request.user)
     except OpenSourceProject.DoesNotExist:
-        return Response({'message': 'Project does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'Project does not exist or You are not authorized to see this project'}, status=status.HTTP_404_NOT_FOUND)
 
     interests = ExpressionOfInterest.objects.filter(project=project)
     serializer = ExpressionOfInterestSerializer(interests, many=True)
@@ -223,55 +230,78 @@ def project_interests(request, project_id):
 @permission_classes([IsAuthenticated])
 def accept_or_reject_interest(request, project_id, eoi_id):
     try:
-        eoi = ExpressionOfInterest.objects.get(id=eoi_id, project_id=project_id)
+        eoi = ExpressionOfInterest.objects.get(
+            id=eoi_id, project_id=project_id)
     except ExpressionOfInterest.DoesNotExist:
         return Response({'message': 'Expression of interest not found'}, status=status.HTTP_404_NOT_FOUND)
-    
+
     # Check if the authenticated user is the creator of the project
     if request.user != eoi.project.creator:
         return Response({'message': 'Only the creator of the project can accept or reject interests'}, status=status.HTTP_403_FORBIDDEN)
-    
+
     # Check if the user is already accepted
     if eoi.status == 'accepted':
         return Response({'message': 'User is already accepted for this project'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     # Process the accept/reject action based on the request data
     action = request.data.get('action')
     if action not in ['accept', 'reject']:
         return Response({'message': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     if action == 'accept':
         # Check if the project has available capacity
         if eoi.project.current_collaborators >= eoi.project.maximum_collaborators:
             return Response({'message': 'Project is already full'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Update the status of the expression of interest to "accepted"
         eoi.status = 'accepted'
         eoi.save()
-        
+
         # Add the user to the project collaborators
         eoi.project.collaborators.add(eoi.user)
-        
+
         # Increase the current collaborators count
         eoi.project.current_collaborators += 1
         eoi.project.save()
-        
+
         # Update the project status to "active" if it's the first user signing up
         if eoi.project.current_collaborators == 1:
             eoi.project.status = 'active'
             eoi.project.save()
-        
+
         return Response({'message': 'Interest accepted successfully'}, status=status.HTTP_200_OK)
     else:
         # Update the status of the expression of interest to "rejected"
         eoi.status = 'rejected'
         eoi.save()
-        
+
         # Remove the user from the project collaborators
         eoi.project.collaborators.remove(eoi.user)
-        
+
         # Decrease the current collaborators count
-        eoi.project.current_collaborators -= 1
+
         eoi.project.save()
-        
+
         return Response({'message': 'Interest rejected successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user_analytics(request, user_id):
+    user = request.user
+    user_projects = user.created_projects.all()
+    user_interests = ExpressionOfInterest.objects.filter(user=user)
+    user_skills = user.programming_skills.all()
+
+    serialized_data = {
+        'user_projects_as_creator': user_projects.count(),
+        'projects_name': list(user_projects.values_list('project_name', flat=True)),
+        'user_collaborations': user.projects_contributed.count(),
+        'collaborations_name': list(user.projects_contributed.values_list('project_name', flat=True)),
+        'user_interests': user_interests.count(),
+        'interests_project_name': list(user_interests.values_list('project__project_name', flat=True)),
+        'user_skills': list(user_skills.values_list('name', flat=True))
+    }
+
+    return Response(serialized_data, status=status.HTTP_200_OK)
