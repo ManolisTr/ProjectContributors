@@ -25,9 +25,6 @@ class CreateUserTestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        # Remove the assertion for 'id' in response.data
-        # self.assertTrue('id' in response.data)
-        # Add more assertions as needed
 
 
 class ResetPasswordTestCase(TestCase):
@@ -291,6 +288,40 @@ class ExpressInterestTestCase(TestCase):
         response = client.post('/api/projects/100/express_interest/')
 
         # Check if the request returns HTTP 404 status code
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class CloseProjectTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser', password='password123')
+        self.client.force_authenticate(user=self.user)
+        self.project = OpenSourceProject.objects.create(
+            project_name='Test Project',
+            description='Test description',
+            maximum_collaborators=5,
+            creator=self.user
+        )
+
+    def test_close_project_success(self):
+        url = reverse('close_project', kwargs={'project_id': self.project.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.status, 'closed')
+
+    def test_close_project_not_creator(self):
+        other_user = User.objects.create_user(
+            username='otheruser', password='password123')
+        self.client.force_authenticate(user=other_user)
+        url = reverse('close_project', kwargs={'project_id': self.project.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_close_project_not_found(self):
+        url = reverse('close_project', kwargs={'project_id': 999})
+        response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 

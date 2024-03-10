@@ -5,7 +5,18 @@ from django.db import models
 
 
 class User(AbstractUser):
-    # Add any additional fields you need
+    """
+    Custom User model extending Django's AbstractUser.
+
+    Additional fields:
+        - age: IntegerField for user's age.
+        - country: CharField for user's country.
+        - residence: CharField for user's residence.
+        - programming_skills: Many-to-Many relationship with ProgrammingSkill model.
+
+    Methods:
+        - __str__: Returns the username of the user.
+    """
     age = models.IntegerField(null=True)
     country = models.CharField(max_length=100, null=True)
     residence = models.CharField(max_length=100, null=True)
@@ -17,6 +28,15 @@ class User(AbstractUser):
 
 
 class ProgrammingSkill(models.Model):
+    """
+    Model representing a programming skill.
+
+    Fields:
+        - name: CharField representing the name of the programming skill.
+
+    Methods:
+        - __str__: Returns the name of the programming skill.
+    """
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -24,6 +44,21 @@ class ProgrammingSkill(models.Model):
 
 
 class OpenSourceProject(models.Model):
+    """
+    Model representing an open-source project.
+
+    Fields:
+        - project_name: CharField representing the name of the project.
+        - description: TextField containing the description of the project.
+        - maximum_collaborators: PositiveIntegerField indicating the maximum number of collaborators allowed for the project.
+        - current_collaborators: PositiveIntegerField indicating the current number of collaborators for the project.
+        - creator: ForeignKey linking to the User model, representing the creator of the project.
+        - collaborators: ManyToManyField linking to the User model, representing the collaborators of the project.
+        - status: CharField representing the status of the project (draft, active, closed).
+
+    Methods:
+        - __str__: Returns the name of the project.
+    """
     STATUS_CHOICES = (
         ('draft', 'Draft'),
         ('active', 'Active'),
@@ -48,6 +83,18 @@ class OpenSourceProject(models.Model):
 
 
 class ExpressionOfInterest(models.Model):
+    """
+    Model representing an expression of interest by a user in an open-source project.
+
+    Fields:
+        - user: ForeignKey linking to the User model, representing the user expressing interest.
+        - project: ForeignKey linking to the OpenSourceProject model, representing the project of interest.
+        - status: CharField representing the status of the expression of interest (pending, accepted, rejected).
+        - created_at: DateTimeField indicating the date and time when the expression of interest was created.
+
+    Methods:
+        - __str__: Returns a string representation of the expression of interest.
+    """
     PENDING = 'pending'
     ACCEPTED = 'accepted'
     REJECTED = 'rejected'
