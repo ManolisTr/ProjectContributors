@@ -7,14 +7,18 @@ urlpatterns = [
     path('add_skill/', views.add_skill, name='add_skill'),
     path('remove_skill/', views.remove_skill, name='remove_skill'),
     path('create_project/', views.create_project, name='create_project'),
-    path('available_projects/', views.available_projects, name='available_projects'),
-    path('projects/<int:project_id>/express_interest/', views.express_interest, name='express_interest'),
-    path('projects/close/<int:project_id>/', views.close_project, name='close_project'),
+    path('available_projects/', views.available_projects,
+         name='available_projects'),
+    path('projects/<int:project_id>/express_interest/',
+         views.express_interest, name='express_interest'),
+    path('projects/close/<int:project_id>/',
+         views.close_project, name='close_project'),
     path('projects/<int:pk>/delete/', views.delete_project, name='delete_project'),
-    path('projects/<int:project_id>/interests/', views.project_interests, name='project_interests'),
-    path('projects/<int:project_id>/accept_or_reject_interest/<int:eoi_id>/', views.accept_or_reject_interest, name='accept_or_reject_interest'),
-    path('get_user_analytics/<int:user_id>/', views.get_user_analytics, name='get_user_analytics'),
-
-
+    path('projects/<int:project_id>/interests/',
+         views.project_interests, name='project_interests'),
+    path('projects/<int:project_id>/accept_or_reject_interest/<int:eoi_id>/',
+         views.accept_or_reject_interest, name='accept_or_reject_interest'),
+    path('get_user_analytics/<int:user_id>/',
+         views.get_user_analytics, name='get_user_analytics'),
 
 ]
