@@ -8,8 +8,8 @@
     - [Technologies Used](#technologies-used)
     - [Python and Django Versions](#python-and-django-versions)
     - [Getting Started](#getting-started)
-    - [API Endpoints](#api-endpoints)
-  - [Endpoints Summary](#endpoints-summary)
+  - [API Endpoints](#api-endpoints)
+    - [Endpoints Summary](#endpoints-summary)
     - [Testing](#testing)
   - [Technical Documentation](#technical-documentation)
       - [Structure](#structure)
@@ -83,9 +83,9 @@ python manage.py runserver
 ```
 
 
-### API Endpoints
+## API Endpoints
 
-## Endpoints Summary
+### Endpoints Summary
 
 - **Create User**
   - URL: `/create_user/`
