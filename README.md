@@ -295,7 +295,7 @@ In order to add skill or to user the rest of the endpoints, you need to login fi
 ### Close Project
 - POST: http://localhost:8000/api/projects/close/<int:project_id>/
 - In headers add the following:
-  - Authorization
+  - Authorization: Token <token>
   
 ### Delete Project
 - DELETE: http://localhost:8000/api/projects/<int:pk>/delete/
@@ -306,7 +306,7 @@ In order to add skill or to user the rest of the endpoints, you need to login fi
 ### Accept or Reject Interest
 - POST: http://localhost:8000/api/projects/<int:project_id>/accept_or_reject_interest/<int:eoi_id>/
 - In headers add the following:
-  - Authorization
+  - Authorization: Token <token>
 - Body:
 ```json
 {
@@ -317,5 +317,5 @@ In order to add skill or to user the rest of the endpoints, you need to login fi
 ### Get User Analytics
 - GET: http://localhost:8000/api/get_user_analytics/<int:user_id>/
 - In headers add the following:
-  - Authorization
+  - Authorization: Token <token>
 
