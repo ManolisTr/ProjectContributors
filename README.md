@@ -1,5 +1,34 @@
 # Project Contributors API
 
+### Table of Contents
+- [Project Contributors API](#project-contributors-api)
+    - [Table of Contents](#table-of-contents)
+    - [About the Project](#about-the-project)
+    - [Features](#features)
+    - [Technologies Used](#technologies-used)
+    - [Python and Django Versions](#python-and-django-versions)
+    - [Getting Started](#getting-started)
+    - [API Endpoints](#api-endpoints)
+  - [Endpoints Summary](#endpoints-summary)
+    - [Testing](#testing)
+  - [Technical Documentation](#technical-documentation)
+      - [Structure](#structure)
+      - [Database Schema](#database-schema)
+  - [Running the Application](#running-the-application)
+    - [Assumptions](#assumptions)
+    - [Create User](#create-user)
+    - [Reset Password](#reset-password)
+    - [Get Token](#get-token)
+    - [Add Skill (same for remove skill)](#add-skill-same-for-remove-skill)
+    - [Create Project](#create-project)
+    - [Available Projects](#available-projects)
+    - [Express Interest](#express-interest)
+    - [Close Project](#close-project)
+    - [Delete Project](#delete-project)
+    - [Project Interests](#project-interests)
+    - [Accept or Reject Interest](#accept-or-reject-interest)
+    - [Get User Analytics](#get-user-analytics)
+
 ### About the Project
 The Project Contributors API is a platform designed to connect programmers and facilitate collaboration on open-source projects. It provides a RESTful API that allows users to register, manage their skills, create and join projects, and view their overall statistics.
 
@@ -128,14 +157,7 @@ python manage.py test api
 ```
 
 
-### Technical Documentation
-
-### Admin Credentials
-To access the Django admin panel, use the following credentials:
-- Username: admin
-- Password: admin
-- URL: `http://localhost:8000/admin`
-
+## Technical Documentation
 
 #### Structure
 
@@ -196,3 +218,104 @@ project_contributors/
 | - created_at             |
 +--------------------------+
 ```
+
+## Running the Application
+
+Via postman or any other API client, you can interact with the API endpoints to perform various operations. Below are some examples of how to use the API.
+
+### Assumptions
+- Only authenticated users can add skills, create projects, and express interest in projects and view the analytics.
+- The maximum number of skills a user can have is three and there is not allowed to have the same skill than once.
+- All users can view the available projects and express interest in them.
+- The creator of a project can close it, delete it, and accept or reject interest from other users.
+- The maximum number of collaborators for a project is determined by the creator.
+- Only if the creator accepts the interest, the user is added to the project.
+
+
+### Create User
+- POST: http://localhost:8000/api/create_user/
+- Request Body:
+```json
+{
+    "username": "test_user",
+    "password": "test_user",
+    "email":"test_user@gmail.com"
+}
+```
+
+### Reset Password
+- POST: http://localhost:8000/api/reset_password/
+- Request Body:
+```json
+{
+    "username": "test_user",
+    "password": "test_user1"
+}
+```
+
+In order to add skill or to user the rest of the endpoints, you need to login first. You can use the following endpoint to get the token.
+
+### Get Token
+- POST: http://localhost:8000/api/token/
+- In body in the section of x-www-form-urlencoded add the following:
+  - username: test_user
+  - password: test_user
+
+### Add Skill (same for remove skill)
+- POST: http://localhost:8000/api/add_skill/
+- In headers add the following:
+  - Authorization: Token <token>
+- Body:
+```json
+{
+    "name": "Python"
+}
+```
+### Create Project
+- POST: http://localhost:8000/api/create_project/
+- In headers add the following:
+  - Authorization: Token <token>
+- Body:
+```json
+{
+    "project_name": "Project 1",
+    "description": "Description of project 1",
+    "maximum_collaborators": 5
+}
+```
+
+### Available Projects
+- GET: http://localhost:8000/api/available_projects/
+
+### Express Interest
+- POST: http://localhost:8000/api/projects/<int:project_id>/express_interest/
+- In headers add the following:
+  - Authorization: Token <token>
+
+### Close Project
+- POST: http://localhost:8000/api/projects/close/<int:project_id>/
+- In headers add the following:
+  - Authorization
+  
+### Delete Project
+- DELETE: http://localhost:8000/api/projects/<int:pk>/delete/
+
+### Project Interests
+- GET: http://localhost:8000/api/projects/<int:project_id>/interests/
+  
+### Accept or Reject Interest
+- POST: http://localhost:8000/api/projects/<int:project_id>/accept_or_reject_interest/<int:eoi_id>/
+- In headers add the following:
+  - Authorization
+- Body:
+```json
+{
+    "status": "accepted"
+}
+```
+
+### Get User Analytics
+- GET: http://localhost:8000/api/get_user_analytics/<int:user_id>/
+- In headers add the following:
+  - Authorization
+
